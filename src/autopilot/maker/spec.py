@@ -85,8 +85,8 @@ def load(path: str | Path) -> Spec:
         if not s.get("id") or s["id"] in ids:
             raise ConfigError(f"{p}: every scene needs a unique id (got {s.get('id')!r})")
         ids.add(s["id"])
-        if not s.get("say"):
-            raise ConfigError(f"{p}: scene {s['id']} needs `say` (the lines the voice speaks)")
+        if not s.get("say") or not all(isinstance(x, str) or (isinstance(x, dict) and x.get("text")) for x in s["say"]):
+            raise ConfigError(f"{p}: scene {s['id']} needs `say`: a list of lines, each a string or {{text, pause}}")
         if not (s.get("headline") or s.get("bullets") or s.get("image")):
             raise ConfigError(f"{p}: scene {s['id']} shows nothing: give it a headline, bullets or an image")
         if s.get("image") and not (p.parent / s["image"]).exists():

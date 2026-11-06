@@ -83,12 +83,13 @@ def make(spec, out: Path, gap=0.45, scene_gap=0.7, lead=0.8, tail=0.9, end_hold=
         t += lead
         lines = []
         for bi, line in enumerate(sc["say"]):
+            text, pause = (line["text"], float(line.get("pause", 0))) if isinstance(line, dict) else (line, 0.0)
             if bi:
                 t += gap
-            y = synth(line)
+            y = synth(text)
             clips.append((t, y))
-            lines.append({"t0": round(t, 3), "t1": round(t + len(y) / SR, 3), "text": line})
-            t += len(y) / SR
+            lines.append({"t0": round(t, 3), "t1": round(t + len(y) / SR, 3), "text": text})
+            t += len(y) / SR + pause
         t += tail
         scenes[sc["id"]] = [round(s0, 3), round(t, 3)]
         beats[sc["id"]] = lines

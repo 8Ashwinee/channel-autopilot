@@ -60,3 +60,10 @@ def test_logo_is_embedded_and_must_exist(tmp_path):
     assert 'id="logo" src="data:image/png;base64,' in html
     with pytest.raises(ConfigError, match="logo not found"):
         specmod.load(write(tmp_path, logo="nope.png"))
+
+
+def test_say_lines_may_carry_a_pause(tmp_path):
+    s = specmod.load(write(tmp_path, scenes=[{"id": "a", "headline": "x", "say": ["One.", {"text": "Two.", "pause": 4}]}]))
+    assert s.scenes[0]["say"][1]["pause"] == 4
+    with pytest.raises(ConfigError, match="needs `say`"):
+        specmod.load(write(tmp_path, scenes=[{"id": "a", "headline": "x", "say": [{"pause": 3}]}]))
