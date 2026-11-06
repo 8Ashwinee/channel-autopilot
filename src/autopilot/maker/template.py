@@ -31,11 +31,12 @@ PAGE = r"""<!doctype html>
   img.pic { max-width:100%; max-height:calc(var(--u)*__IMGH__); border-radius:calc(var(--u)*28); object-fit:contain; align-self:center; }
   #cap { position:absolute; left:calc(var(--u)*__PADX__); right:calc(var(--u)*__PADX__); bottom:calc(var(--u)*__CAPB__); text-align:center;
          font-size:calc(var(--u)*__CAP__); font-weight:700; line-height:1.25; opacity:0; text-shadow:0 calc(var(--u)*3) calc(var(--u)*18) rgba(0,0,0,.45); }
+  #logo { position:absolute; left:calc(var(--u)*__PADX__); top:calc(var(--u)*56); height:calc(var(--u)*84); width:auto; border-radius:calc(var(--u)*16); }
   #bar { position:absolute; left:0; top:0; height:calc(var(--u)*10); background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0; }
 </style></head>
 <body>
 <div id="bg"><div class="blob" id="b1"></div><div class="blob" id="b2"></div></div>
-<div id="stage"></div><div id="cap"></div><div id="bar"></div>
+__LOGO__<div id="stage"></div><div id="cap"></div><div id="bar"></div>
 <script>
 const SPEC = __SPEC__;
 const TIMING = __TIMING__;
@@ -104,6 +105,7 @@ def build(spec, timing: dict) -> str:
     page = PAGE
     for k, val in {**vals, **spec.theme, "W": w, "H": h, "U": round(u, 4)}.items():
         page = page.replace(f"__{k}__", str(val))
+    page = page.replace("__LOGO__", f'<img id="logo" src="{_data_uri(spec.logo)}">' if spec.logo else "")
     page = page.replace("__font__", spec.theme["font"]).replace("__SPEC__", _js({"scenes": scenes, "captions": spec.captions})).replace("__TIMING__", _js(timing))
     return page
 

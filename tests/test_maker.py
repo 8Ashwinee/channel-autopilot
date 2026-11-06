@@ -51,3 +51,12 @@ def test_script_tags_in_text_cannot_break_the_page(tmp_path):
     s = specmod.load(write(tmp_path, scenes=[{"id": "a", "headline": "</script><b>x", "say": ["Hi."]}]))
     html = template.build(s, {"total": 3, "scenes": {"a": [0, 2]}, "beats": {"a": [{"t0": 1, "t1": 2, "text": "Hi."}]}})
     assert html.count("</script>") == 1
+
+
+def test_logo_is_embedded_and_must_exist(tmp_path):
+    (tmp_path / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    s = specmod.load(write(tmp_path, logo="logo.png"))
+    html = template.build(s, {"total": 3, "scenes": {"a": [0, 2]}, "beats": {"a": [{"t0": 1, "t1": 2, "text": "Hi."}]}})
+    assert 'id="logo" src="data:image/png;base64,' in html
+    with pytest.raises(ConfigError, match="logo not found"):
+        specmod.load(write(tmp_path, logo="nope.png"))

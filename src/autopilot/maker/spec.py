@@ -8,6 +8,7 @@ tags: [focus, habits]
 theme: {preset: calm}       # calm | bold | light, then any of: bg, bg2, fg, muted, accent, accent2, font
 voice: {name: af_heart, speed: 1.0, lang: en-us}
 captions: true              # burned-in captions band
+logo: logo.png              # optional, relative to video.yml: shown top-left on every scene
 music: bed.mp3              # optional, relative to video.yml; ducked under the voice
 music_gain: 0.18
 scenes:
@@ -50,6 +51,7 @@ class Spec:
         self.theme = {**PRESETS[(d.get("theme") or {}).get("preset", "calm")], **{k: v for k, v in (d.get("theme") or {}).items() if k != "preset"}}
         self.voice = {"name": "af_heart", "speed": 1.0, "lang": "en-us", **(d.get("voice") or {})}
         self.captions = bool(d.get("captions", True))
+        self.logo = (base / d["logo"]) if d.get("logo") else None
         self.music = (base / d["music"]) if d.get("music") else None
         self.music_gain = float(d.get("music_gain", 0.18))
         self.scenes = list(d["scenes"])
@@ -89,6 +91,8 @@ def load(path: str | Path) -> Spec:
             raise ConfigError(f"{p}: scene {s['id']} shows nothing: give it a headline, bullets or an image")
         if s.get("image") and not (p.parent / s["image"]).exists():
             raise ConfigError(f"{p}: image not found: {s['image']}")
+    if d.get("logo") and not (p.parent / d["logo"]).exists():
+        raise ConfigError(f"{p}: logo not found: {d['logo']}")
     if d.get("music") and not (p.parent / d["music"]).exists():
         raise ConfigError(f"{p}: music not found: {d['music']}")
     return Spec(d, p.parent)
