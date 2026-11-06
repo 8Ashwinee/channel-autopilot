@@ -156,6 +156,16 @@ def cmd_make(a):
     return 0
 
 
+def cmd_make_image(a):
+    from .maker import image
+    png = image.make(a.slug, a.headline, Path(a.out), sub=a.sub or "", kicker=a.kicker or "", footer=a.footer or "",
+                     footer_right=a.footer_right or "", preset=a.preset, size=a.size, logo=a.logo)
+    print("image:", png)
+    if a.queue:
+        print("queued:", image.to_queue(a.slug, png, _cfg(a).path("queue", "queue"), a.caption or a.headline.replace("*", "")))
+    return 0
+
+
 def cmd_doctor(a):
     cfg = _cfg(a)
     bad = 0
@@ -197,6 +207,11 @@ def main(argv=None):
     mk.add_argument("--no-render", action="store_true"); mk.add_argument("--check", action="store_true", help="voice + layout check only")
     mk.add_argument("--queue", action="store_true", help="add the finished video to the publishing queue")
     mk.add_argument("--workers", type=int, default=3); mk.set_defaults(fn=cmd_make)
+    mi = sub.add_parser("make-image", help="make a feed image (headline card) for Instagram and Facebook")
+    mi.add_argument("slug"); mi.add_argument("--headline", required=True); mi.add_argument("--sub"); mi.add_argument("--kicker")
+    mi.add_argument("--footer"); mi.add_argument("--footer-right"); mi.add_argument("--caption"); mi.add_argument("--out", default="out")
+    mi.add_argument("--preset", default="calm", choices=["calm", "bold", "light"]); mi.add_argument("--size", default="portrait", choices=["portrait", "square"])
+    mi.add_argument("--logo", help="a logo image shown top-left"); mi.add_argument("--queue", action="store_true"); mi.set_defaults(fn=cmd_make_image)
     sub.add_parser("doctor").set_defaults(fn=cmd_doctor)
     sub.add_parser("youtube-auth").set_defaults(fn=cmd_youtube_auth)
     a = p.parse_args(argv)

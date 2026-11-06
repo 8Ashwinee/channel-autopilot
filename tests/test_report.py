@@ -29,3 +29,16 @@ def test_report_lists_every_live_url_and_failures(cfg, ledger, tmp_path, monkeyp
 
 def test_email_none_does_not_send(cfg):
     assert "not sent" in report.send(cfg, "s", "t", "<p>h</p>")
+
+
+def test_report_shows_every_scheduled_action_done_or_not(cfg, ledger, tmp_path, monkeypatch):
+    q = tmp_path / "q"
+    make_item(q, "a", actions=["youtube.short", "instagram.reel"])
+    items = load_queue(q, DEFAULT_ACTIONS)
+    monkeypatch.setattr(platforms, "get", lambda a: (lambda ctx, it: Result("https://x/1", "1")))
+    now = datetime.now(timezone.utc)
+    schedule.run(cfg, ledger, items, now=now, only="youtube.short")
+    _, text, html = report.build(cfg, ledger, items, schedule.day_key(cfg, "report", now))
+    assert "✗ facebook.post" in text and "nothing queued" in text      # nothing was queued for it
+    assert "… instagram.reel" in text and "queued, not posted yet" in text
+    assert "✓ youtube.short" not in text or "1/2" in text                # 1 of 2 posted is not 'done'

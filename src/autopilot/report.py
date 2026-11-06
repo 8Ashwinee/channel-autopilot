@@ -24,12 +24,14 @@ def build(cfg: Config, ledger: Ledger, items, day: str) -> tuple[str, str, str]:
     ok = [p for p in rows if p.status == "ok"]
     bad = [p for p in rows if p.status == "failed"]
     pending = sum(1 for it in items for a in it.actions if not ledger.done(it.slug, a))
+    sched = _schedule_rows(cfg, ledger, items, rows)
     name = cfg.get("name", "Channel autopilot")
     subject = f"{name}: {len(ok)} posted, {len(bad)} failed ({day})"
     t = [f"{name} — daily report for {day}", "", f"Posted today: {len(ok)}"]
     t += [f"  {p.action:<17} {p.item}\n    {p.url}" for p in ok] or ["  nothing posted"]
     if bad:
         t += ["", f"Failed today: {len(bad)}"] + [f"  {p.action:<17} {p.item}: {p.error}" for p in bad]
+    t += ["", "Schedule for the day (posted / daily limit):"] + [f"  {mark} {a:<17} {n}/{lim}  {note}".rstrip() for mark, a, n, lim, note in sched]
     t += ["", f"Still queued: {pending} post(s) across {len(items)} item(s)"]
     rows = "".join(f"<tr><td>{html.escape(p.action)}</td><td>{html.escape(p.item)}</td><td><a href='{html.escape(p.url or '')}'>{html.escape(p.url or '')}</a></td></tr>" for p in ok) \
         or "<tr><td colspan=3>nothing posted</td></tr>"
@@ -37,8 +39,28 @@ def build(cfg: Config, ledger: Ledger, items, day: str) -> tuple[str, str, str]:
     h = (f"<h2>{html.escape(name)} — {day}</h2><p>Posted today: <b>{len(ok)}</b></p>"
          f"<table cellpadding=6 border=1 style='border-collapse:collapse'><tr><th>Action</th><th>Item</th><th>Live URL</th></tr>{rows}</table>"
          + (f"<h3>Failed ({len(bad)})</h3><ul>{fails}</ul>" if bad else "")
+         + "<h3>Schedule for the day</h3><table cellpadding=6 border=1 style='border-collapse:collapse'><tr><th></th><th>Action</th><th>Posted / limit</th><th>Note</th></tr>"
+         + "".join(f"<tr><td>{m}</td><td>{html.escape(a)}</td><td>{n}/{lim}</td><td>{html.escape(note)}</td></tr>" for m, a, n, lim, note in sched) + "</table>"
          + f"<p>Still queued: {pending} post(s) across {len(items)} item(s).</p>")
     return subject, "\n".join(t), h
+
+
+def _schedule_rows(cfg, ledger, items, rows):
+    """One row per action in the schedule: did it reach its daily limit, and if not, why."""
+    out = []
+    for action, lim in cfg.limits.items():
+        n = sum(1 for p in rows if p.status == "ok" and p.action == action)
+        failed = sum(1 for p in rows if p.status == "failed" and p.action == action)
+        waiting = any(action in it.actions and not ledger.done(it.slug, action) for it in items)
+        if n >= int(lim):
+            out.append(("✓", action, n, lim, ""))
+        elif failed:
+            out.append(("✗", action, n, lim, f"{failed} failed (see above)"))
+        elif waiting:
+            out.append(("…", action, n, lim, "queued, not posted yet (platform cap or retry pending)"))
+        else:
+            out.append(("✗", action, n, lim, "nothing queued"))
+    return out
 
 
 def send(cfg: Config, subject: str, text: str, body_html: str):
