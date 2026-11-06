@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+# never commit credentials, tokens or run state
+config.yml
+secrets/
+*.token.json
+state.db
+reports/
+out/

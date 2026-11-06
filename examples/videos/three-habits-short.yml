@@ -1,0 +1,36 @@
+# A 9:16 short. Run:  autopilot make examples/videos/three-habits-short.yml --queue
+slug: three-focus-habits
+kind: short
+title: Three tiny habits that make focus easier
+description: Three small habits you can start today to protect your attention. No apps, no willpower contest.
+tags: [focus, habits, productivity]
+theme: {preset: calm}
+voice: {name: af_heart, speed: 1.0, lang: en-us}
+captions: true
+scenes:
+  - id: hook
+    headline: Focus is a *habit*, not a gift
+    sub: Three tiny changes, starting today
+    say:
+      - Focus is not something you either have or you don't.
+      - Here are three tiny habits that make it easier.
+  - id: steps
+    headline: The three habits
+    bullets:
+      - Phone out of sight while you work
+      - One task on the screen at a time
+      - A two minute walk between tasks
+    say:
+      - One. Put your phone out of sight while you work.
+      - Two. Keep only one task on your screen at a time.
+      - Three. Take a two minute walk between tasks.
+  - id: close
+    headline: Start with *one*
+    sub: Pick the easiest and try it tomorrow
+    say:
+      - Pick the easiest one, and try it tomorrow.
+outro:
+  headline: Follow for more
+  sub: Small habits, big difference
+  say:
+    - Follow for more small habits.

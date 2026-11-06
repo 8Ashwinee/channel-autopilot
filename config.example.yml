@@ -1,0 +1,43 @@
+# channel-autopilot config. Never commit this file: it holds your tokens.
+name: My channel
+timezone: UTC
+queue: queue                 # folder of items
+state: state.db              # the ledger
+
+# Daily limits per action (these are the defaults; delete what you do not use)
+limits:
+  youtube.short: 2
+  youtube.video: 2
+  instagram.reel: 1
+  instagram.story: 1
+  instagram.image: 1
+  facebook.reel: 1
+  facebook.story: 1
+  facebook.image: 1
+  facebook.post: 1
+
+youtube:
+  client_secret: secrets/youtube-oauth-client.json
+  token: secrets/youtube-token.json
+  privacy: public
+  reset_hour: 8              # YouTube's daily upload cap resets at 08:00 UTC
+
+instagram:
+  account_id: "${IG_ACCOUNT_ID}"
+  token: "${META_TOKEN}"
+
+facebook:
+  page_id: "${FB_PAGE_ID}"
+  token: "${META_TOKEN}"
+
+# Instagram and Facebook fetch media from a public https URL
+media:
+  s3_bucket: ""
+  public_base: ""
+  prefix: autopilot/
+
+# The daily report
+email:
+  method: none               # none | smtp | ses
+  to: you@example.com
+  from: autopilot@example.com
