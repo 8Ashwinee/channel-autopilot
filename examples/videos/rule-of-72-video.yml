@@ -1,0 +1,37 @@
+# A 16:9 long-format video (kept short as an example). Run:  autopilot make examples/videos/rule-of-72-video.yml
+slug: rule-of-72-explained
+kind: video
+title: The Rule of 72 Explained in One Minute
+description: How long does money take to double? Divide 72 by the yearly growth rate. A quick explainer with three examples.
+tags: [rule of 72, compound interest, investing basics, personal finance]
+theme: {preset: bold}
+voice: {name: af_heart, speed: 1.0, lang: en-us}
+captions: true
+scenes:
+  - id: answer
+    headline: Divide *72* by the rate
+    sub: That is roughly how many years your money takes to double
+    say:
+      - Want to know how long your money takes to double?
+      - Divide seventy-two by the yearly growth rate. That's it.
+  - id: examples
+    headline: Three examples
+    bullets:
+      - At 4% a year, about 18 years
+      - At 8% a year, about 9 years
+      - At 12% a year, about 6 years
+    say:
+      - At four percent a year, about eighteen years.
+      - At eight percent, about nine years.
+      - At twelve percent, about six years.
+  - id: why
+    headline: Why it works
+    sub: Compound growth, rounded to an easy number
+    say:
+      - It works because growth compounds, and seventy-two divides neatly by many common rates.
+      - It's an estimate, most accurate between about six and ten percent.
+outro:
+  headline: Try it on your own rate
+  sub: For education, not financial advice
+  say:
+    - Try it on your own rate. For education, not financial advice.

@@ -1,5 +1,22 @@
 # channel-autopilot
 
+<p align="center"><img src="docs/media/banner.png" alt="channel-autopilot: keyword research, AI writer, video maker, scheduler and dashboard, publishing to YouTube, Instagram and Facebook" width="100%"></p>
+
+<p align="center">
+  <img alt="YouTube and Shorts" src="https://img.shields.io/badge/YouTube%20%2B%20Shorts-FF0000?style=for-the-badge&logo=youtube&logoColor=white">
+  <img alt="Instagram Reels and stories" src="https://img.shields.io/badge/Instagram%20Reels-E4405F?style=for-the-badge&logo=instagram&logoColor=white">
+  <img alt="Facebook Reels and posts" src="https://img.shields.io/badge/Facebook%20Reels-1877F2?style=for-the-badge&logo=facebook&logoColor=white">
+</p>
+<p align="center">
+  <img alt="Google Ads Keyword Planner" src="https://img.shields.io/badge/research-Keyword%20Planner-FBBC04?logo=googleads&logoColor=white">
+  <img alt="Search Console" src="https://img.shields.io/badge/analytics-Search%20Console-458CF5?logo=googlesearchconsole&logoColor=white">
+  <img alt="Dashboard on AWS" src="https://img.shields.io/badge/dashboard-your%20AWS-FF9900">
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white">
+  <img alt="Free text-to-speech" src="https://img.shields.io/badge/voice-Kokoro%20TTS-8A2BE2">
+  <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-3CD278">
+  <img alt="Version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-555">
+</p>
+
 Run YouTube channels on autopilot with **your own keys**: find what people search for, write and make narrated videos,
 publish them on a schedule to YouTube, Instagram and Facebook, rotate across several channels, and watch it all on a
 private dashboard.
@@ -14,6 +31,25 @@ autopilot research ──► writer (your AI tool) ──► autopilot make ─�
 **No keys are included.** Every user brings their own Google Cloud project (YouTube API, Keyword Planner, Search
 Console), their own Meta app if they post to Instagram/Facebook, and their own AWS account for the dashboard.
 Start with [docs/GOOGLE-SETUP.md](docs/GOOGLE-SETUP.md).
+
+## See it
+
+**Videos it makes** (from the two example files in [`examples/videos/`](examples/videos/), free voice, rendered on a laptop):
+
+| Short (9:16) | Long video (16:9) |
+|:---:|:---:|
+| <a href="docs/media/sample-short.mp4"><img src="docs/media/sample-short.gif" width="230" alt="A 28-second Short made by autopilot make"></a> | <a href="docs/media/sample-video.mp4"><img src="docs/media/sample-video.gif" width="460" alt="A 16:9 explainer made by autopilot make"></a> |
+| [▶ Watch with sound](docs/media/sample-short.mp4) · [the script](examples/videos/three-habits-short.yml) | [▶ Watch with sound](docs/media/sample-video.mp4) · [the script](examples/videos/rule-of-72-video.yml) |
+
+**The dashboard** (deployed into your own AWS account; demo channels and numbers):
+
+| Every channel at a glance | One channel in depth |
+|:---:|:---:|
+| [![Overview](docs/media/dashboard-overview.png)](docs/media/dashboard-overview.png) | [![Channel page](docs/media/dashboard-channel.png)](docs/media/dashboard-channel.png) |
+| **The daily rotation, with a pause switch** | **Keyword research: "Use next" / "Never"** |
+| [![Rotation](docs/media/dashboard-rotation.png)](docs/media/dashboard-rotation.png) | [![Keyword research](docs/media/dashboard-keywords.png)](docs/media/dashboard-keywords.png) |
+
+More: sample research output, a rotation day, a queue item, in [docs/SAMPLES.md](docs/SAMPLES.md).
 
 | Guide | For |
 |---|---|
