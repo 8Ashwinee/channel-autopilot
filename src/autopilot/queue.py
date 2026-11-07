@@ -16,6 +16,8 @@ item.yml:
   actions: [youtube.short, instagram.reel]   # optional; defaults come from the config by kind
   language: en
   playlist: PLxxxx           # optional YouTube playlist id
+  publish_at: 2026-11-10T17:30:00Z   # optional: YouTube uploads it private and makes it public at that time (UTC)
+  comment: ...               # optional: posted on the YouTube video as its first comment (pin it in Studio)
 """
 from __future__ import annotations
 
@@ -50,6 +52,8 @@ class Item:
     actions: list = field(default_factory=list)
     language: str = "en"
     playlist: str = ""
+    publish_at: str = ""
+    comment: str = ""
 
     def text(self) -> str:
         return self.caption or self.description or self.title
@@ -78,7 +82,8 @@ def load_item(folder: Path, default_actions: dict) -> Item:
     return Item(slug=folder.name, dir=folder, kind=kind, title=d.get("title", ""), description=d.get("description", ""),
                 caption=d.get("caption", ""), tags=list(d.get("tags") or []), link=d.get("link", ""),
                 priority=int(d.get("priority", 100)), files=files, actions=actions,
-                language=d.get("language", "en"), playlist=d.get("playlist", ""))
+                language=d.get("language", "en"), playlist=d.get("playlist", ""),
+                publish_at=str(d.get("publish_at") or ""), comment=d.get("comment", ""))
 
 
 def load_queue(root: Path, default_actions: dict) -> list[Item]:

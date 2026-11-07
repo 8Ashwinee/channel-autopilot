@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -78,6 +79,11 @@ def cmd_init(a):
         print(f"wrote {p}: edit it, then `autopilot doctor`")
     (p.parent / "queue").mkdir(exist_ok=True)
     (p.parent / "secrets").mkdir(exist_ok=True)
+    gi = p.parent / ".gitignore"                     # keys and tokens never reach a repository
+    lines = gi.read_text().splitlines() if gi.exists() else []
+    add = [x for x in ("secrets/", "config.yml", "state.db", "out/", "rotation-days/") if x not in lines]
+    if add:
+        gi.write_text("\n".join(lines + add) + "\n")
 
 
 def cmd_add(a):
@@ -184,6 +190,38 @@ def cmd_youtube_auth(a):
     print("token saved:", youtube.auth(_cfg(a)))
 
 
+def cmd_research(a):
+    from . import research
+    cfg = _cfg(a)
+    seeds = [x.strip() for x in a.seed.split(",")] if a.seed else None
+    res = research.run(cfg, seeds=seeds, min_searches=a.min_searches, max_searches=a.max_searches, competition=a.competition,
+                       min_bid=a.min_bid, min_words=a.min_words, questions=a.questions or None,
+                       keep_navigational=a.keep_navigational or None)
+    print(f"{res['ideas']:,} ideas, {res['merged']:,} after merging misspellings, {len(res['rows']):,} passed {res['filters']}")
+    for r in res["rows"][:a.limit]:
+        print(f"{r['searches']:>10,}  {r['competition']:<7} ${r['bid_low']}-{r['bid_high']:<8} {r['keyword']}")
+    if a.csv:
+        research.write_csv(res["rows"], Path(a.csv)); print("csv:", a.csv)
+    return 0
+
+
+def cmd_rotation(a):
+    import datetime as dt
+    from .rotation import Rotation
+    rot = Rotation(a.file)
+    day = dt.date.fromisoformat(a.date) if a.date else dt.date.today()
+    if a.action == "status":
+        for i in range(-2, 2 * len(rot.channels)):
+            d = day + dt.timedelta(days=i)
+            st = rot.state(d)
+            done = sum(1 for v in st.get("videos", []) if v.get("queued"))
+            print(d, rot.channel_for(d).name, f"{done} queued" if st else "")
+        return 0
+    st = rot.run(day, publish=a.publish, dry=(a.action == "plan"))
+    print(json.dumps(st, indent=1, ensure_ascii=False))
+    return 0 if all(not v.get("failed") for v in st.get("videos", [])) else 1
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="autopilot", description=__doc__)
     p.add_argument("--config", default="config.yml")
@@ -212,6 +250,16 @@ def main(argv=None):
     mi.add_argument("--footer"); mi.add_argument("--footer-right"); mi.add_argument("--caption"); mi.add_argument("--out", default="out")
     mi.add_argument("--preset", default="calm", choices=["calm", "bold", "light"]); mi.add_argument("--size", default="portrait", choices=["portrait", "square"])
     mi.add_argument("--logo", help="a logo image shown top-left"); mi.add_argument("--queue", action="store_true"); mi.set_defaults(fn=cmd_make_image)
+    rs = sub.add_parser("research", help="keyword research with Google Ads Keyword Planner (config: research:)")
+    rs.add_argument("--seed", help="comma-separated topics instead of the config's seeds")
+    rs.add_argument("--min-searches", type=int); rs.add_argument("--max-searches", type=int); rs.add_argument("--competition")
+    rs.add_argument("--min-bid", type=float); rs.add_argument("--min-words", type=int); rs.add_argument("--questions", action="store_true")
+    rs.add_argument("--keep-navigational", action="store_true"); rs.add_argument("--limit", type=int, default=30); rs.add_argument("--csv")
+    rs.set_defaults(fn=cmd_research)
+    ro = sub.add_parser("rotation", help="several channels, one a day: research, write, make, queue (rotation.yml)")
+    ro.add_argument("action", choices=["status", "plan", "run"]); ro.add_argument("--file", default="rotation.yml")
+    ro.add_argument("--date"); ro.add_argument("--publish", action="store_true", help="run the day's channel publisher afterwards")
+    ro.set_defaults(fn=cmd_rotation)
     sub.add_parser("doctor").set_defaults(fn=cmd_doctor)
     sub.add_parser("youtube-auth").set_defaults(fn=cmd_youtube_auth)
     a = p.parse_args(argv)

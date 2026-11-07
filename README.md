@@ -1,19 +1,39 @@
 # channel-autopilot
 
-Make a narrated video from a text file, then publish it every day to YouTube, Instagram and Facebook, with a daily report that lists every live URL.
+Run YouTube channels on autopilot with **your own keys**: find what people search for, write and make narrated videos,
+publish them on a schedule to YouTube, Instagram and Facebook, rotate across several channels, and watch it all on a
+private dashboard.
 
 ```
-video.yml ──► autopilot make ──► queue/ ──► autopilot run (daily) ──► YouTube · Instagram · Facebook
- (script)      (voice + video)    (items)     (caps, retries,           + a daily report with every live URL
-                                               never posts twice)
+autopilot research ──► writer (your AI tool) ──► autopilot make ──► queue/ ──► autopilot run ──► YouTube · Instagram · Facebook
+ Keyword Planner:        a video.yml per          voice, video,       go-live      daily caps,      + a daily report
+ what people search      topic, sourced facts     captions, thumb     times        retries          + the dashboard
+                         └─────────────── autopilot rotation: one channel a day, every day ───────────────┘
 ```
 
-Two parts that work alone or together:
+**No keys are included.** Every user brings their own Google Cloud project (YouTube API, Keyword Planner, Search
+Console), their own Meta app if they post to Instagram/Facebook, and their own AWS account for the dashboard.
+Start with [docs/GOOGLE-SETUP.md](docs/GOOGLE-SETUP.md).
+
+| Guide | For |
+|---|---|
+| [docs/GOOGLE-SETUP.md](docs/GOOGLE-SETUP.md) | your Google keys, step by step: Cloud project, sign-in screen, YouTube sign-in per channel, service account, Google Ads Basic access, Search Console, quotas |
+| [docs/SETUP.md](docs/SETUP.md) | Instagram/Facebook, media hosting, the daily report, running it daily |
+| [docs/RESEARCH.md](docs/RESEARCH.md) | keyword research and how to read the numbers |
+| [docs/ROTATION.md](docs/ROTATION.md) | several channels, fully automatic, one channel a day |
+| [docs/DASHBOARD.md](docs/DASHBOARD.md) | the private dashboard in your AWS account |
+| [docs/RESPONSIBLE-USE.md](docs/RESPONSIBLE-USE.md) | staying on the right side of YouTube's rules |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | the errors people actually hit, and the fixes |
+
+The parts work alone or together:
 
 | Part | What it does | Needs |
 |---|---|---|
 | **Publisher** | Posts a queue of videos, images and links to YouTube (videos and Shorts), Instagram (Reels, stories, images) and Facebook (Reels, stories, images, posts). Respects daily limits, retries failures, records everything in a local ledger, emails a daily report. | Python 3.10+, your own platform credentials |
 | **Maker** | Turns a short `video.yml` (headlines, bullets, the lines to speak) into a narrated MP4 with captions and a thumbnail, using free open-source text-to-speech. | Python **3.10–3.12**, ffmpeg, espeak-ng, Chromium (via Playwright) |
+| **Research** | Google Ads Keyword Planner over its REST API: every related search with monthly volume, competition and advertiser bid; misspellings merged, navigational searches removed, ranked by what pays. | a Google Cloud service account, a Google Ads account, Google Ads API Basic access |
+| **Rotation** | Several channels, one channel a day: research → your writer command writes each video.yml → make → queue with go-live times → publish. | the above, plus a writer command (e.g. Claude Code headless) |
+| **Dashboard** | A private web page in your AWS account: analytics per channel, YouTube search terms, the rotation (with a pause switch and topic choices), keyword research, Search Console. | an AWS account; about $0 a month |
 
 Not included: accounts, platform approval, or any promise of views. You bring your own YouTube, Instagram and Facebook credentials; [docs/SETUP.md](docs/SETUP.md) walks through getting them.
 
@@ -22,7 +42,7 @@ Not included: accounts, platform approval, or any promise of views. You bring yo
 ```bash
 git clone https://github.com/<you>/channel-autopilot && cd channel-autopilot
 python3.12 -m venv .venv && . .venv/bin/activate
-pip install -e '.[youtube,maker]'
+pip install -e '.[youtube,maker,research]'
 playwright install chromium
 brew install ffmpeg espeak-ng            # or: apt install ffmpeg espeak-ng
 
@@ -39,7 +59,12 @@ When your credentials are in `config.yml` ([docs/SETUP.md](docs/SETUP.md)):
 autopilot doctor                         # which credentials are still missing
 autopilot youtube-auth                   # one browser sign-in for YouTube
 autopilot run --report                   # post what is due today, then email the report
+autopilot research                       # topics worth a video (config: research:, docs/RESEARCH.md)
 ```
+
+Several channels on autopilot: [docs/ROTATION.md](docs/ROTATION.md). Scheduled release of a queued video: add
+`publish_at: 2026-01-07T17:30:00Z` to its item.yml (uploaded private, YouTube makes it public then); `comment:` posts the
+first comment.
 
 ## The video maker
 
@@ -94,7 +119,9 @@ Run it every day with cron or launchd: see [docs/SETUP.md](docs/SETUP.md). A lap
 
 ## What it does not do
 
-It does not write your scripts, pick topics, create accounts or get platform approvals, edit existing videos, or post to TikTok, X or LinkedIn (the action list is small on purpose; adding a platform means one module in `src/autopilot/platforms/`).
+It does not create accounts or get platform approvals for you, ship any keys, edit existing videos, or post to TikTok, X or
+LinkedIn (adding a platform means one module in `src/autopilot/platforms/`). Script writing is done by the writer command
+**you** configure (any AI tool or script); the project supplies the prompt template and the rules, not an AI account.
 
 ## Licences of what it uses
 
@@ -103,5 +130,5 @@ This project is MIT. It *calls* these, and does not bundle them: [Kokoro](https:
 ## Development
 
 ```bash
-pip install -e '.[dev,youtube,maker]' && pytest      # the tests mock the network; nothing is posted
+pip install -e '.[dev,youtube,maker,research]' && pytest      # the tests mock the network; nothing is posted
 ```

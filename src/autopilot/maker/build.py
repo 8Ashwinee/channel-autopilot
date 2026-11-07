@@ -50,7 +50,7 @@ def to_queue(sp, result: dict, queue_dir: Path) -> Path:
     shutil.copy(result["thumb"], d / "thumb.jpg")
     item = {"kind": sp.kind, "title": sp.title, "description": sp.d.get("description", ""), "tags": sp.d.get("tags", []),
             "files": {"video": "video.mp4", "thumbnail": "thumb.jpg"}}
-    for k in ("caption", "playlist", "priority", "language", "watch"):   # optional extras a video.yml may carry into the queue item
+    for k in ("caption", "playlist", "priority", "language", "watch", "publish_at", "comment"):   # optional extras a video.yml may carry into the queue item
         if sp.d.get(k) not in (None, ""):
             item[k] = sp.d[k]
     if sp.kind == "video":

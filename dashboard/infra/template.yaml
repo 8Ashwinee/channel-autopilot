@@ -1,0 +1,211 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Channel Studio - a private YouTube dashboard (channel-autopilot). S3 + CloudFront, one Lambda behind CloudFront OAC, DynamoDB on demand, Cognito (admin-created users only).
+
+Parameters:
+  CodeBucket: {Type: String}
+  CodeKey: {Type: String}
+  CertArn: {Type: String, Default: ""}
+  Alias: {Type: String, Default: ""}
+  AllowedEmails: {Type: String, Description: "comma-separated emails allowed to sign in"}
+  AuthDomainPrefix: {Type: String, Description: "globally unique Cognito domain prefix, e.g. mychannels-studio"}
+  SsmPrefix: {Type: String, Default: /chstudio}
+  TableName: {Type: String, Default: chstudio}
+
+Conditions:
+  HasAlias: !And [!Not [!Equals [!Ref Alias, ""]], !Not [!Equals [!Ref CertArn, ""]]]
+
+Resources:
+  WebBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration: {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}
+      Tags: [{Key: project, Value: chstudio}]
+
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{AttributeName: pk, AttributeType: S}, {AttributeName: sk, AttributeType: S}]
+      KeySchema: [{AttributeName: pk, KeyType: HASH}, {AttributeName: sk, KeyType: RANGE}]
+      PointInTimeRecoverySpecification: {PointInTimeRecoveryEnabled: true}
+      Tags: [{Key: project, Value: chstudio}]
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-users"
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+        InviteMessageTemplate:
+          EmailSubject: "Your Channel Studio sign-in"
+          EmailMessage: "Sign in to Channel Studio with your email {username} and this temporary password: {####}"
+      Policies: {PasswordPolicy: {MinimumLength: 12, RequireLowercase: true, RequireUppercase: true, RequireNumbers: true, RequireSymbols: false}}
+      MfaConfiguration: OPTIONAL
+      EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      UserPoolTags: {project: chstudio}
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties: {Domain: !Ref AuthDomainPrefix, UserPoolId: !Ref UserPool}
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: studio-web
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs:
+        - !Sub "https://${Dist.DomainName}/"
+        - !If [HasAlias, !Sub "https://${Alias}/", !Ref "AWS::NoValue"]
+      LogoutURLs:
+        - !Sub "https://${Dist.DomainName}/"
+        - !If [HasAlias, !Sub "https://${Alias}/", !Ref "AWS::NoValue"]
+      IdTokenValidity: 60
+      AccessTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits: {IdToken: minutes, AccessToken: minutes, RefreshToken: days}
+      PreventUserExistenceErrors: ENABLED
+
+  FnRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{Effect: Allow, Principal: {Service: lambda.amazonaws.com}, Action: sts:AssumeRole}]
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: studio
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - {Effect: Allow, Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:Query, dynamodb:DeleteItem, dynamodb:UpdateItem, dynamodb:BatchWriteItem], Resource: !GetAtt Table.Arn}
+              - {Effect: Allow, Action: [ssm:GetParameter, ssm:GetParameters, ssm:GetParametersByPath], Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SsmPrefix}/*"}
+              - {Effect: Allow, Action: kms:Decrypt, Resource: "*", Condition: {StringEquals: {"kms:ViaService": !Sub "ssm.${AWS::Region}.amazonaws.com"}}}
+              - {Effect: Allow, Action: lambda:InvokeFunction, Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-api"}
+      Tags: [{Key: project, Value: chstudio}]
+
+  Fn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-api"
+      Runtime: python3.12
+      Architectures: [arm64]
+      Handler: app.handler
+      Role: !GetAtt FnRole.Arn
+      Timeout: 300
+      MemorySize: 512
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      Environment:
+        Variables:
+          TABLE: !Ref Table
+          USER_POOL_ID: !Ref UserPool
+          ALLOWED_EMAILS: !Ref AllowedEmails
+          SSM_PREFIX: !Ref SsmPrefix
+      Tags: [{Key: project, Value: chstudio}]
+
+  FnUrl:
+    Type: AWS::Lambda::Url
+    Properties: {AuthType: AWS_IAM, TargetFunctionArn: !GetAtt Fn.Arn}
+
+  FnUrlPermCF:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Fn
+      Action: lambda:InvokeFunctionUrl
+      FunctionUrlAuthType: AWS_IAM
+      Principal: cloudfront.amazonaws.com
+      SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Dist}"
+
+  FnInvokePermCF:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Fn
+      Action: lambda:InvokeFunction
+      Principal: cloudfront.amazonaws.com
+      SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Dist}"
+
+  Daily:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Channel Studio daily collection (YouTube + Search Console)
+      ScheduleExpression: cron(15 5 * * ? *)
+      Targets: [{Arn: !GetAtt Fn.Arn, Id: collect, Input: '{"collect": "all"}'}]
+
+  DailyPerm:
+    Type: AWS::Lambda::Permission
+    Properties: {FunctionName: !Ref Fn, Action: lambda:InvokeFunction, Principal: events.amazonaws.com, SourceArn: !GetAtt Daily.Arn}
+
+  OacS3:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig: {Name: !Sub "${AWS::StackName}-s3", OriginAccessControlOriginType: s3, SigningBehavior: always, SigningProtocol: sigv4}
+
+  OacFn:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig: {Name: !Sub "${AWS::StackName}-fn", OriginAccessControlOriginType: lambda, SigningBehavior: always, SigningProtocol: sigv4}
+
+  Dist:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Channel Studio
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        Aliases: !If [HasAlias, [!Ref Alias], !Ref "AWS::NoValue"]
+        ViewerCertificate: !If
+          - HasAlias
+          - {AcmCertificateArn: !Ref CertArn, SslSupportMethod: sni-only, MinimumProtocolVersion: TLSv1.2_2021}
+          - {CloudFrontDefaultCertificate: true}
+        Origins:
+          - Id: web
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            S3OriginConfig: {OriginAccessIdentity: ""}
+            OriginAccessControlId: !Ref OacS3
+          - Id: api
+            DomainName: !Select [2, !Split ["/", !GetAtt FnUrl.FunctionUrl]]
+            CustomOriginConfig: {OriginProtocolPolicy: https-only, OriginReadTimeout: 60}
+            OriginAccessControlId: !Ref OacFn
+        DefaultCacheBehavior:
+          TargetOriginId: web
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6       # CachingOptimized
+          Compress: true
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad     # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac  # AllViewerExceptHostHeader
+      Tags: [{Key: project, Value: chstudio}]
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudfront.amazonaws.com}
+            Action: s3:GetObject
+            Resource: !Sub "${WebBucket.Arn}/*"
+            Condition: {StringEquals: {"AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Dist}"}}
+
+Outputs:
+  DistDomain: {Value: !GetAtt Dist.DomainName}
+  DistId: {Value: !Ref Dist}
+  WebBucket: {Value: !Ref WebBucket}
+  UserPoolId: {Value: !Ref UserPool}
+  ClientId: {Value: !Ref UserPoolClient}
+  CognitoDomain: {Value: !Sub "${AuthDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"}

@@ -2,13 +2,7 @@
 
 ## 1. YouTube
 
-1. [Google Cloud Console](https://console.cloud.google.com/): create a project and enable **YouTube Data API v3**.
-2. Credentials → Create credentials → **OAuth client ID** → *Desktop app*. Download the JSON to `secrets/youtube-oauth-client.json`.
-3. OAuth consent screen: add your own Google account as a test user. If you leave the app in *Testing*, its refresh token expires after about a week; publishing the consent screen avoids that (an unverified app shows a warning screen to you, the only user).
-4. `autopilot youtube-auth`: sign in as the account that owns the channel. The token is saved to `secrets/youtube-token.json` (not committed).
-5. **Check Google's rules for your project.** Videos uploaded through the API from a project that has not passed YouTube's API compliance audit may be forced to private. If yours are, either complete the audit or upload with `youtube.privacy: private` and publish by hand.
-
-An upload costs 1,600 of the default 10,000 daily quota units (about six uploads a day), and new channels may be capped lower.
+Follow [GOOGLE-SETUP.md](GOOGLE-SETUP.md) §1–4: your own Cloud project, the published sign-in screen, the OAuth client JSON in `secrets/youtube-oauth-client.json`, then `autopilot youtube-auth` signed in as the channel. §9 explains the quota.
 
 ## 2. Instagram and Facebook (one Meta token)
 

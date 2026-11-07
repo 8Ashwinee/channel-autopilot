@@ -1,0 +1,19 @@
+# A rotation of channels: one channel a day, 2 long videos + 1 Short, researched, written, made, queued, published.
+# Each entry in `channels` is an ordinary autopilot folder (`autopilot init` in it) with ITS OWN config.yml:
+# its own YouTube sign-in (`autopilot youtube-auth`), a `research:` block and a `brief:`. See docs/ROTATION.md.
+start_date: 2026-01-05
+channels:
+  - ../tech-channel
+  - ../money-channel
+per_day: {short: 1, video: 2}
+release:
+  time: "12:30"
+  timezone: America/New_York
+  offsets_days: {short: [0], video: [2, 4]}     # the Short the same day, the long videos 2 and 4 days later
+lengths: {short: "35 to 55 seconds of speech", video: "8 to 10 minutes of speech"}
+writer:
+  # Any command that writes the video.yml at {spec}. This one uses Claude Code headless; swap in your own tool.
+  command: [claude, -p, "{prompt}", --dangerously-skip-permissions, --allowedTools, "Read Write Edit WebFetch WebSearch", --max-turns, "120"]
+  prompt_file: writer.md
+  timeout: 3600
+dashboard: {url: "", token_file: ""}            # optional, see dashboard/README.md

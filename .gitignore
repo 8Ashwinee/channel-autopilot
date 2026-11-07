@@ -1,14 +1,16 @@
-__pycache__/
-*.pyc
-.venv/
-*.egg-info/
-build/
-dist/
-.pytest_cache/
 # never commit credentials, tokens or run state
-config.yml
-secrets/
+*.egg-info/
+*.pyc
 *.token.json
-state.db
-reports/
+.pytest_cache/
+.venv/
+__pycache__/
+build/
+config.yml
+dashboard/web/config.js
+dist/
 out/
+reports/
+rotation-days/
+secrets/
+state.db
