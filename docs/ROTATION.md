@@ -90,7 +90,7 @@ Keep the rules in it: sourced facts only, honest titles, disclaimers for money/l
 
 ```bash
 cd my-network
-autopilot rotation status            # which channel on which day
+autopilot rotation status            # which channel on which day (--json for JSON output)
 autopilot rotation plan              # today's channel and the 3 topics it would use; makes nothing
 autopilot rotation run               # research, write, make, queue (about 30-90 minutes)
 autopilot rotation run --publish     # same, then runs that channel's publisher (`autopilot run --report`)

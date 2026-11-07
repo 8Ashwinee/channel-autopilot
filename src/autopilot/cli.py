@@ -211,11 +211,16 @@ def cmd_rotation(a):
     rot = Rotation(a.file)
     day = dt.date.fromisoformat(a.date) if a.date else dt.date.today()
     if a.action == "status":
+        rows = []
         for i in range(-2, 2 * len(rot.channels)):
             d = day + dt.timedelta(days=i)
             st = rot.state(d)
             done = sum(1 for v in st.get("videos", []) if v.get("queued"))
-            print(d, rot.channel_for(d).name, f"{done} queued" if st else "")
+            rows.append({"date": d.isoformat(), "channel": rot.channel_for(d).name, "queued": done})
+            if not a.json:
+                print(d, rot.channel_for(d).name, f"{done} queued" if st else "")
+        if a.json:
+            print(json.dumps(rows, indent=1, ensure_ascii=False))
         return 0
     st = rot.run(day, publish=a.publish, dry=(a.action == "plan"))
     print(json.dumps(st, indent=1, ensure_ascii=False))
@@ -259,6 +264,7 @@ def main(argv=None):
     ro = sub.add_parser("rotation", help="several channels, one a day: research, write, make, queue (rotation.yml)")
     ro.add_argument("action", choices=["status", "plan", "run"]); ro.add_argument("--file", default="rotation.yml")
     ro.add_argument("--date"); ro.add_argument("--publish", action="store_true", help="run the day's channel publisher afterwards")
+    ro.add_argument("--json", action="store_true", help="print status schedule as JSON")
     ro.set_defaults(fn=cmd_rotation)
     sub.add_parser("doctor").set_defaults(fn=cmd_doctor)
     sub.add_parser("youtube-auth").set_defaults(fn=cmd_youtube_auth)

@@ -1,9 +1,10 @@
 import datetime as dt
+import json
 from pathlib import Path
 
 import yaml
 
-from autopilot import research
+from autopilot import cli, research
 from autopilot.queue import load_item
 from autopilot.rotation import Rotation
 
@@ -72,3 +73,16 @@ def test_release_times_short_same_day_long_videos_plus_2_and_4(tmp_path):
 def test_dashboard_is_optional(tmp_path):
     r = rot(tmp_path)
     assert r._dash("control") is None and r.sync() == {}
+
+
+def test_rotation_status_json(tmp_path, capsys):
+    r = rot(tmp_path)
+    r.save(dt.date(2026, 1, 5), {"videos": [{"queued": "q1"}, {"queued": "q2"}, {"failed": True}]})
+    rc = cli.main(["rotation", "status", "--file", str(tmp_path / "rotation.yml"), "--date", "2026-01-05", "--json"])
+    assert rc == 0
+    rows = json.loads(capsys.readouterr().out)
+    assert len(rows) == 8
+    assert rows[0] == {"date": "2026-01-03", "channel": "b", "queued": 0}
+    assert rows[2] == {"date": "2026-01-05", "channel": "a", "queued": 2}
+    assert [x["channel"] for x in rows[2:5]] == ["a", "b", "c"]
+
