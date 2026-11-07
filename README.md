@@ -34,12 +34,19 @@ Start with [docs/GOOGLE-SETUP.md](docs/GOOGLE-SETUP.md).
 
 ## See it
 
-**Videos it makes** (from the two example files in [`examples/videos/`](examples/videos/), free voice, rendered on a laptop):
+**Videos it made and published** (real uploads on our own channel; click to watch on YouTube):
 
 | Short (9:16) | Long video (16:9) |
 |:---:|:---:|
-| <a href="docs/media/sample-short.mp4"><img src="docs/media/sample-short.gif" width="230" alt="A 28-second Short made by autopilot make"></a> | <a href="docs/media/sample-video.mp4"><img src="docs/media/sample-video.gif" width="460" alt="A 16:9 explainer made by autopilot make"></a> |
-| [▶ Watch with sound](docs/media/sample-short.mp4) · [the script](examples/videos/three-habits-short.yml) | [▶ Watch with sound](docs/media/sample-video.mp4) · [the script](examples/videos/rule-of-72-video.yml) |
+| <a href="https://youtube.com/shorts/2P-h3ky8HXA"><img src="docs/media/yt-short.jpg" width="230" alt="Watch a Short made and published by channel-autopilot on YouTube"></a> | <a href="https://youtube.com/watch?v=tYhTUjXQVGc"><img src="docs/media/yt-long.jpg" width="460" alt="Watch a long video made and published by channel-autopilot on YouTube"></a> |
+| [▶ Watch the Short on YouTube](https://youtube.com/shorts/2P-h3ky8HXA) | [▶ Watch the long video on YouTube](https://youtube.com/watch?v=tYhTUjXQVGc) |
+
+**Make your own in a minute:** the two example files in [`examples/videos/`](examples/videos/) render on a laptop with a free voice
+([the Short's script](examples/videos/three-habits-short.yml) · [the long video's script](examples/videos/rule-of-72-video.yml)).
+
+| Example Short | Example long video |
+|:---:|:---:|
+| <img src="docs/media/sample-short.gif" width="230" alt="A 28-second Short rendered from the example file"> | <img src="docs/media/sample-video.gif" width="460" alt="A 16:9 explainer rendered from the example file"> |
 
 **The dashboard** (deployed into your own AWS account; demo channels and numbers):
 
@@ -162,6 +169,22 @@ LinkedIn (adding a platform means one module in `src/autopilot/platforms/`). Scr
 ## Licences of what it uses
 
 This project is MIT. It *calls* these, and does not bundle them: [Kokoro](https://github.com/hexgrad/Kokoro-82M) text-to-speech (open-weight, Apache-2.0) through `kokoro-onnx`, Playwright and Chromium, and your own `ffmpeg` (check the licence of the build you installed: many are GPL). The voice model is downloaded on first use, not shipped. Music, fonts and images are yours: nothing is included.
+
+## Contributing
+
+**Contributors are welcome, first-timers included.** This project grows by people adding the pieces they need:
+
+- **A new platform** (TikTok, X, LinkedIn, Pinterest, Threads): one module in `src/autopilot/platforms/`, modelled on `youtube.py`.
+- **A new video style or voice** for the maker.
+- **Docs and translations:** a clearer setup step, a fix to a guide, a guide in your language.
+- **Bug reports:** what you ran, what you expected, what happened.
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), then pick an issue labelled
+[good first issue](https://github.com/ClayDesk/channel-autopilot/labels/good%20first%20issue) or
+[help wanted](https://github.com/ClayDesk/channel-autopilot/labels/help%20wanted). Questions and ideas go to
+[Discussions](https://github.com/ClayDesk/channel-autopilot/discussions). If the tool saves you time, a ⭐ helps others find it.
+
+<a href="https://github.com/ClayDesk/channel-autopilot/graphs/contributors"><img src="https://contrib.rocks/image?repo=ClayDesk/channel-autopilot" alt="Contributors"></a>
 
 ## Development
 
