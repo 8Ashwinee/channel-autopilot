@@ -17,6 +17,10 @@
   <img alt="Version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-555">
 </p>
 
+<p align="center">
+  <a href="docs/README.es.md">Leer en español 🇪🇸</a>
+</p>
+
 Run YouTube channels on autopilot with **your own keys**: find what people search for, write and make narrated videos,
 publish them on a schedule to YouTube, Instagram and Facebook, rotate across several channels, and watch it all on a
 private dashboard.
